@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>碁盤の鍵</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #f5f2ec;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    padding: 3rem 1.5rem;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* ── 4枚の画像 ── */
+  .boards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    width: 100%;
+    max-width: 800px;
+  }
+
+  .board-img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    border: 1px solid #ccc;
+  }
+
+  /* プレースホルダー（画像未設定時） */
+  .board-placeholder {
+    width: 100%;
+    aspect-ratio: 1;
+    background: #e8e4dc;
+    border: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .board-placeholder svg {
+    width: 88%;
+    height: 88%;
+  }
+
+  /* ── パスワード入力 ── */
+  .password-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  .digits {
+    display: flex;
+    border: 1px solid #bbb;
+    overflow: hidden;
+  }
+
+  .digit-input {
+    width: 64px;
+    height: 64px;
+    background: #fff;
+    border: none;
+    border-right: 1px solid #bbb;
+    color: #1a1a1a;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 300;
+    text-align: center;
+    outline: none;
+    caret-color: #c9a84c;
+    -moz-appearance: textfield;
+  }
+  .digit-input:last-child { border-right: none; }
+  .digit-input::-webkit-outer-spin-button,
+  .digit-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .digit-input:focus { background: #f5f5f5; }
+
+  .submit-btn {
+    background: transparent;
+    border: 1px solid #999;
+    color: #555;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    padding: 0.7rem 2.5rem;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .submit-btn:hover { border-color: #c9a84c; color: #c9a84c; }
+
+  .msg {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    min-height: 1em;
+    opacity: 0;
+    transition: opacity 0.3s;
+    color: #888;
+  }
+  .msg.error   { color: #c25a5a; opacity: 1; }
+  .msg.success { color: #c9a84c; opacity: 1; }
+
+  /* ── 解錠後 ── */
+  #unlocked {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
+    animation: fadeIn 0.8s ease forwards;
+    color: #f0ead6;
+  }
+  #unlocked h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 2rem;
+    letter-spacing: 0.1em;
+  }
+  #unlocked p { font-size: 0.8rem; color: #888; letter-spacing: 0.12em; line-height: 2; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  .shake { animation: shake 0.35s ease; }
+
+  @media (max-width: 500px) {
+    .boards { grid-template-columns: repeat(2, 1fr); }
+    .digit-input { width: 56px; height: 56px; font-size: 1.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 4枚の画像 -->
+<div class="boards" id="boardsGrid"></div>
+
+<!-- パスワード入力 -->
+<div class="password-wrap" id="passwordSection">
+  <div class="digits" id="digitsBox">
+    <input class="digit-input" id="d0" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="1桁目">
+    <input class="digit-input" id="d1" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="2桁目">
+    <input class="digit-input" id="d2" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="3桁目">
+    <input class="digit-input" id="d3" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="4桁目">
+  </div>
+  <div class="msg" id="msg"></div>
+  <button class="submit-btn" id="submitBtn">確認する</button>
+</div>
+
+<!-- 正解後コンテンツ -->
+<div id="unlocked">
+  <h2>扉が開きました</h2>
+  <p>ここに正解後のコンテンツを追加してください</p>
+</div>
+
+<script>
+// ── 設定 ──────────────────────────────
+const CORRECT_PASSWORD = '1234'; // ← 正しいパスワードに変更
+
+// 画像パスを設定（null のままだとサンプル碁盤が表示されます）
+const BOARD_IMAGES = [
+  null,  // 1枚目: 例 './board1.png'
+  null,  // 2枚目
+  null,  // 3枚目
+  null,  // 4枚目
+];
+// ─────────────────────────────────────
+
+// サンプル碁盤SVG生成
+function makeSVG(stones) {
+  const s = 6, c = 100 / (s + 1);
+  let g = '';
+  for (let i = 1; i <= s; i++) {
+    g += `<line x1="${c}%" y1="${i*c}%" x2="${s*c}%" y2="${i*c}%" stroke="#7a5c28" stroke-width="0.8"/>`;
+    g += `<line x1="${i*c}%" y1="${c}%" x2="${i*c}%" y2="${s*c}%" stroke="#7a5c28" stroke-width="0.8"/>`;
+  }
+  const st = stones.map(([r,col,cl]) => {
+    const f = cl==='b'?'#111':'#f8f4ec', sk = cl==='b'?'#000':'#ccc';
+    return `<circle cx="${col*c}%" cy="${r*c}%" r="${c*0.42}%" fill="${f}" stroke="${sk}" stroke-width="1"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#dcb468"/>${g}${st}</svg>`;
+}
+const SAMPLES = [
+  [[1,1,'b'],[1,3,'b'],[2,2,'w'],[3,1,'b'],[3,3,'w'],[4,2,'b']],
+  [[1,2,'w'],[2,1,'b'],[2,3,'b'],[3,2,'w'],[4,1,'w'],[4,3,'b']],
+  [[1,1,'b'],[1,2,'b'],[2,3,'w'],[3,1,'w'],[3,3,'b'],[4,2,'w']],
+  [[1,3,'b'],[2,1,'w'],[2,2,'b'],[3,3,'b'],[4,1,'b'],[4,2,'w']],
+];
+
+const grid = document.getElementById('boardsGrid');
+BOARD_IMAGES.forEach((src, i) => {
+  if (src) {
+    const img = document.createElement('img');
+    img.className = 'board-img';
+    img.src = src;
+    img.alt = `盤面${i+1}`;
+    grid.appendChild(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'board-placeholder';
+    ph.innerHTML = makeSVG(SAMPLES[i]);
+    grid.appendChild(ph);
+  }
+});
+
+// 入力制御
+const inputs = Array.from(document.querySelectorAll('.digit-input'));
+const msgEl = document.getElementById('msg');
+const box = document.getElementById('digitsBox');
+
+inputs.forEach((inp, i) => {
+  inp.addEventListener('input', () => {
+    inp.value = inp.value.replace(/[^0-9]/g,'').slice(-1);
+    if (inp.value && i < 3) inputs[i+1].focus();
+    msgEl.className = 'msg';
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !inp.value && i > 0) inputs[i-1].focus();
+    if (e.key === 'Enter') check();
+  });
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    const t = (e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'');
+    t.split('').slice(0,4).forEach((ch,j) => { if(inputs[i+j]) inputs[i+j].value=ch; });
+    inputs[Math.min(i+t.length,3)].focus();
+  });
+});
+
+function check() {
+  const pw = inputs.map(d=>d.value).join('');
+  if (pw.length < 4) { showMsg('4桁を入力してください','error'); return; }
+  if (pw === CORRECT_PASSWORD) {
+    showMsg('正解です','success');
+    setTimeout(() => {
+      document.getElementById('passwordSection').style.display = 'none';
+      const u = document.getElementById('unlocked');
+      u.style.display = 'flex';
+    }, 700);
+  } else {
+    box.classList.remove('shake');
+    void box.offsetWidth;
+    box.classList.add('shake');
+    showMsg('違います','error');
+    inputs.forEach(d=>d.value='');
+    inputs[0].focus();
+  }
+}
+
+function showMsg(t, cls) { msgEl.textContent = t; msgEl.className = `msg ${cls}`; }
+
+document.getElementById('submitBtn').addEventListener('click', check);
+inputs[0].focus();
+</script>
+</body>
+</html>
