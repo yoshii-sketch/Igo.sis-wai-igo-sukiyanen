@@ -3,331 +3,1021 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>碁盤の鍵</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+<title>緊急通信</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400&family=Cormorant+Garamond:wght@300&family=Inter:wght@300;400&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+.page{display:none;position:fixed;inset:0;background:#f5f2ec;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem;padding:1rem}
+.page.show{display:flex;animation:riseInPage .8s ease forwards}
+@keyframes riseInPage{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 
-  body {
-    background: #f5f2ec;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3rem;
-    padding: 3rem 1.5rem;
-    font-family: 'Inter', sans-serif;
-  }
+/* イントロ */
+#intro{position:fixed;inset:0;background:#020d1a;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;overflow:hidden;cursor:pointer;user-select:none}
+#bgCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.55}
+#intro::before,#endingPage::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,180,255,.018) 3px,rgba(0,180,255,.018) 4px);pointer-events:none;z-index:2}
+#connectingScreen{display:flex;flex-direction:column;align-items:center;gap:1.8rem;z-index:3}
+.hex-ring{width:130px;height:130px;animation:spinRing 4s linear infinite;filter:drop-shadow(0 0 12px rgba(0,180,255,.7))}
+@keyframes spinRing{to{transform:rotate(360deg)}}
+.connect-label{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:#00b4ff;letter-spacing:.4em;animation:blink 1.1s step-end infinite;text-shadow:0 0 10px rgba(0,180,255,.8)}
+.progress-bar-wrap{width:280px;height:2px;background:#051828;border:1px solid #0a3a5a;overflow:hidden}
+.progress-bar{height:100%;background:#00b4ff;width:0;box-shadow:0 0 10px #00b4ff,0 0 20px rgba(0,180,255,.4)}
+#staticOverlay{position:fixed;inset:0;z-index:1050;opacity:0;pointer-events:none;background:#020d1a}
+#successScreen{display:none;flex-direction:column;align-items:center;gap:1.4rem;z-index:3;animation:successFadeIn .4s ease forwards}
+@keyframes successFadeIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+.success-ring{width:110px;height:110px;filter:drop-shadow(0 0 20px rgba(0,255,160,.9))}
+.success-ring svg{width:100%;height:100%}
+.success-check{stroke-dasharray:120;stroke-dashoffset:120;animation:drawCheck .6s ease .2s forwards}
+@keyframes drawCheck{to{stroke-dashoffset:0}}
+.success-title{font-family:'Share Tech Mono',monospace;font-size:1.4rem;color:#00ffa0;letter-spacing:.3em;text-shadow:0 0 20px rgba(0,255,160,.8),0 0 40px rgba(0,255,160,.4)}
+.success-sub{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:#00b47a;letter-spacing:.5em;opacity:0;animation:riseInSub .5s ease .7s forwards}
+@keyframes riseInSub{from{opacity:0;transform:translateY(8px)}to{opacity:.8;transform:none}}
+#flashOverlay{position:fixed;inset:0;background:#00ffa0;opacity:0;pointer-events:none;z-index:1500;transition:opacity .12s ease}
+#flashOverlay.flash{opacity:.18}
+#glitchOverlay{position:fixed;inset:0;z-index:1200;opacity:0;pointer-events:none;background:#020d1a}
+#glitchCanvas{position:absolute;inset:0;width:100%;height:100%}
+#messageScreen{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:700px;z-index:3;text-align:center;gap:2.5rem;padding:1rem}
+.sender-tag{font-family:'Share Tech Mono',monospace;font-size:.65rem;color:#00b4ff;letter-spacing:.4em;opacity:.7;text-shadow:0 0 8px rgba(0,180,255,.6)}
+.msg-text{font-family:'Noto Sans JP',sans-serif;font-weight:300;font-size:clamp(1.3rem,4vw,2rem);color:#e8f4ff;line-height:1.8;letter-spacing:.05em;text-shadow:0 0 30px rgba(0,180,255,.25),0 2px 4px rgba(0,0,0,.6);min-height:3.6em;display:flex;align-items:center;justify-content:center}
+.msg-text.special{color:#fffbe6;font-size:clamp(1.4rem,4.5vw,2.2rem);text-shadow:0 0 40px rgba(255,220,80,.5),0 0 80px rgba(255,200,0,.2)}
+.msg-text.dim{color:#5a8aaa;font-size:clamp(1.1rem,3vw,1.6rem)}
+.cursor{display:inline-block;width:3px;height:1.1em;background:#00b4ff;margin-left:3px;vertical-align:middle;animation:blink .7s step-end infinite}
+.tap-hint{font-family:'Share Tech Mono','Noto Sans JP',monospace;font-size:.62rem;color:#00b4ff;letter-spacing:.35em;opacity:0;transition:opacity .5s;text-shadow:0 0 8px rgba(0,180,255,.6)}
+.tap-hint.visible{opacity:.8;animation:pulseHint 2s ease-in-out infinite}
+@keyframes pulseHint{0%,100%{opacity:.4}50%{opacity:.9}}
+.progress-dots{display:flex;gap:6px;align-items:center}
+.dot{width:5px;height:5px;border-radius:50%;background:#0a3a5a;transition:background .3s,box-shadow .3s}
+.dot.active{background:#00b4ff;box-shadow:0 0 6px #00b4ff}
+.dot.done{background:#004466}
+#skipBtn{position:fixed;bottom:1.8rem;right:1.8rem;z-index:1100;background:transparent;border:1px solid rgba(0,180,255,.4);color:rgba(0,180,255,.6);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.3em;padding:.5rem 1.1rem;cursor:pointer;transition:all .2s}
+#skipBtn:hover{border-color:#00b4ff;color:#00b4ff}
+#introOverlay{position:fixed;inset:0;background:#020d1a;z-index:900;opacity:0;pointer-events:none;transition:opacity .9s ease}
 
-  /* ── 4枚の画像 ── */
-  .boards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    width: 100%;
-    max-width: 800px;
-  }
+/* メイン */
+#mainContent{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:3rem;padding:3rem 1.5rem;background:#f5f2ec;font-family:'Inter','Noto Sans JP',sans-serif}
+#mainContent.show{display:flex}
+.boards{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;width:100%;max-width:800px}
+.board-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;border:1px solid #ccc}
+.board-placeholder{width:100%;aspect-ratio:1;background:#e8e4dc;border:1px solid #ccc;display:flex;align-items:center;justify-content:center}
+.board-placeholder svg{width:88%;height:88%}
+.password-wrap{display:flex;flex-direction:column;align-items:center;gap:1.2rem}
+.digits{display:flex;border:1px solid #bbb;overflow:hidden}
+.digit-input{width:64px;height:64px;background:#fff;border:none;border-right:1px solid #bbb;color:#1a1a1a;font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;text-align:center;outline:none;caret-color:#c9a84c;-moz-appearance:textfield}
+.digit-input:last-child{border-right:none}
+.digit-input::-webkit-outer-spin-button,.digit-input::-webkit-inner-spin-button{-webkit-appearance:none}
+.digit-input:focus{background:#f5f5f5}
+.submit-btn{background:transparent;border:1px solid #999;color:#555;font-family:'Inter','Noto Sans JP',sans-serif;font-size:.7rem;letter-spacing:.3em;padding:.7rem 2.5rem;cursor:pointer;transition:border-color .2s,color .2s}
+.submit-btn:hover{border-color:#c9a84c;color:#c9a84c}
+.feedback-msg{font-size:.7rem;letter-spacing:.2em;min-height:1em;opacity:0;transition:opacity .3s;color:#888}
+.feedback-msg.error{color:#c25a5a;opacity:1}
+.feedback-msg.success{color:#c9a84c;opacity:1}
+#overlay{position:fixed;inset:0;background:#f5f2ec;opacity:0;pointer-events:none;z-index:500;transition:opacity .7s ease}
+#overlay.active{opacity:1}
+#goPage{z-index:150}#goPage2{z-index:160}#goPage2b{z-index:155}#goPage3{z-index:165}#goPage6{z-index:170}#nextPage{z-index:200}
+.go-question{font-family:'Inter','Noto Sans JP',sans-serif;font-size:clamp(.9rem,2.8vw,1.15rem);color:#1a1a1a;letter-spacing:.1em;text-align:center;line-height:1.7}
+.go-wrap{overflow:auto;max-width:96vw;max-height:72vh;border:1px solid #bbb;box-shadow:0 2px 20px rgba(0,0,0,.1);line-height:0}
+.go-canvas{cursor:pointer;touch-action:none;display:block}
 
-  .board-img {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
-    display: block;
-    border: 1px solid #ccc;
-  }
+/* 法則類推 */
+.nazo-wrap{display:flex;flex-direction:column;align-items:center;gap:1.4rem;width:100%;max-width:600px;padding:1rem}
+.nazo-title{font-family:'Inter','Noto Sans JP',sans-serif;font-size:clamp(.75rem,2vw,.9rem);color:#555;letter-spacing:.08em;text-align:center}
+.nazo-board-row{display:flex;align-items:center;justify-content:center;gap:.5rem;flex-wrap:nowrap}
+.nazo-board{border:1px solid #bbb;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-shrink:0;max-width:100%}
+.nazo-sep{font-size:clamp(2.5rem,7vw,4rem);color:#555;flex-shrink:0;line-height:1}
+.nazo-eq{font-size:clamp(1rem,2.5vw,1.4rem);color:#aaa;flex-shrink:0;margin:0 .2rem}
+.nazo-word{font-family:'Noto Sans JP','Inter',sans-serif;font-size:clamp(1rem,3vw,1.5rem);font-weight:300;color:#1a1a1a;flex-shrink:0;min-width:5em}
+.nazo-q{color:#c9a84c;letter-spacing:.1em}
+.nazo-input-wrap{display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%}
+.nazo-input{width:100%;max-width:240px;height:50px;background:#fff;border:1px solid #bbb;color:#1a1a1a;font-family:'Noto Sans JP','Inter',sans-serif;font-size:1.1rem;text-align:center;outline:none;letter-spacing:.1em;transition:border-color .2s}
+.nazo-input:focus{border-color:#c9a84c}
 
-  .board-placeholder {
-    width: 100%;
-    aspect-ratio: 1;
-    background: #e8e4dc;
-    border: 1px solid #ccc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .board-placeholder svg { width: 88%; height: 88%; }
+/* クリア */
+#clearPage{display:none;position:fixed;inset:0;background:#020d1a;z-index:400;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+#clearPage.show{display:flex}
+#clearCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+#clearContent{display:flex;flex-direction:column;align-items:center;gap:1.3rem;z-index:1;text-align:center;opacity:0;transform:translateY(20px);transition:opacity 1s ease .5s,transform 1s ease .5s}
+#clearPage.show #clearContent{opacity:1;transform:none}
+.clear-bar{width:60px;height:1px;background:#00b4ff;box-shadow:0 0 10px #00b4ff}
+.clear-title{font-family:'Share Tech Mono',monospace;font-size:clamp(2rem,8vw,4rem);color:#00b4ff;letter-spacing:.4em;text-shadow:0 0 30px rgba(0,180,255,.8),0 0 60px rgba(0,180,255,.4)}
+.clear-sub{font-family:'Noto Sans JP','Inter',sans-serif;font-size:clamp(.8rem,2.5vw,1rem);color:#5a8aaa;letter-spacing:.15em;line-height:2;min-height:2em}
+#clearBoard{border:1px solid rgba(0,180,255,.3);box-shadow:0 0 20px rgba(0,180,255,.2);opacity:0;transition:opacity 1.2s ease 1s}
+#clearPage.show #clearBoard{opacity:1}
+#endingPage{display:none;position:fixed;inset:0;background:#020d1a;z-index:300;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;overflow:hidden}
+#endingPage.show{display:flex}
+#endingScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5rem;width:100%;max-width:700px;padding:2rem;text-align:center;z-index:3}
 
-  /* ── パスワード入力 ── */
-  .password-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.2rem;
-  }
-
-  .digits {
-    display: flex;
-    border: 1px solid #bbb;
-    overflow: hidden;
-  }
-
-  .digit-input {
-    width: 64px;
-    height: 64px;
-    background: #fff;
-    border: none;
-    border-right: 1px solid #bbb;
-    color: #1a1a1a;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem;
-    font-weight: 300;
-    text-align: center;
-    outline: none;
-    caret-color: #c9a84c;
-    -moz-appearance: textfield;
-  }
-  .digit-input:last-child { border-right: none; }
-  .digit-input::-webkit-outer-spin-button,
-  .digit-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-  .digit-input:focus { background: #f5f5f5; }
-
-  .submit-btn {
-    background: transparent;
-    border: 1px solid #999;
-    color: #555;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    padding: 0.7rem 2.5rem;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-  }
-  .submit-btn:hover { border-color: #c9a84c; color: #c9a84c; }
-
-  .msg {
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    min-height: 1em;
-    opacity: 0;
-    transition: opacity 0.3s;
-    color: #888;
-  }
-  .msg.error   { color: #c25a5a; opacity: 1; }
-  .msg.success { color: #c9a84c; opacity: 1; }
-
-  /* ── ページ遷移オーバーレイ ── */
-  #overlay {
-    position: fixed;
-    inset: 0;
-    background: #f5f2ec;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 100;
-    transition: opacity 0.7s ease;
-  }
-  #overlay.active { opacity: 1; }
-
-  /* ── 次ページ ── */
-  #nextPage {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: #f5f2ec;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.8rem;
-    text-align: center;
-    z-index: 200;
-  }
-  #nextPage.show { display: flex; }
-
-  .next-bar {
-    width: 40px;
-    height: 1px;
-    background: #c9a84c;
-    opacity: 0;
-    transform: scaleX(0);
-    animation: none;
-  }
-  #nextPage h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 300;
-    font-size: 2.2rem;
-    letter-spacing: 0.1em;
-    color: #1a1a1a;
-    opacity: 0;
-  }
-  #nextPage p {
-    font-size: 0.75rem;
-    letter-spacing: 0.25em;
-    color: #999;
-    opacity: 0;
-  }
-
-  /* アニメーション */
-  @keyframes zoomFadeIn {
-    from { opacity: 0; transform: scale(1.08); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-  @keyframes riseIn {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes barIn {
-    from { opacity: 0; transform: scaleX(0); }
-    to   { opacity: 1; transform: scaleX(1); }
-  }
-
-  #nextPage.animate {
-    animation: zoomFadeIn 1s cubic-bezier(0.16,1,0.3,1) forwards;
-  }
-  #nextPage.animate .next-bar {
-    animation: barIn 0.6s ease 0.4s forwards;
-  }
-  #nextPage.animate h2 {
-    animation: riseIn 0.8s ease 0.6s forwards;
-  }
-  #nextPage.animate p {
-    animation: riseIn 0.8s ease 0.9s forwards;
-  }
-
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    20% { transform: translateX(-8px); }
-    40% { transform: translateX(8px); }
-    60% { transform: translateX(-5px); }
-    80% { transform: translateX(5px); }
-  }
-  .shake { animation: shake 0.35s ease; }
-
-  @media (max-width: 500px) {
-    .boards { grid-template-columns: repeat(2, 1fr); }
-    .digit-input { width: 56px; height: 56px; font-size: 1.7rem; }
-  }
+#nextPage{overflow-y:auto;justify-content:flex-start}
+#nextPage .nazo-wrap{margin:auto 0}
+.final-riddle{font-family:'Noto Sans JP','Inter',sans-serif;font-weight:300;font-size:clamp(.85rem,2.6vw,1.05rem);color:#2a2a2a;letter-spacing:.1em;line-height:2.1;text-align:center}
+.revisit{z-index:250!important}
+#backBtn{position:fixed;top:1rem;left:1rem;z-index:600;padding:.5rem 1.2rem;background:#f5f2ec}
+#reviewNav{position:fixed;top:1rem;right:1rem;z-index:600;display:flex;flex-direction:column;align-items:flex-end;gap:.4rem;max-width:62vw}
+.nav-list{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end}
+.nav-btn{padding:.45rem .8rem;font-size:.7rem;letter-spacing:.12em;background:#f5f2ec}
+.nav-btn.active{border-color:#c9a84c;color:#c9a84c}
+.digit-view{width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:#fff;border-right:1px solid #bbb;color:#1a1a1a;font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300}
+.digit-view:last-child{border-right:none}
+@keyframes shakeBig{0%,100%{transform:translate(0,0)}15%{transform:translate(-7px,4px)}30%{transform:translate(6px,-5px)}45%{transform:translate(-5px,-3px)}60%{transform:translate(5px,4px)}80%{transform:translate(-2px,2px)}}
+.shake-big{animation:shakeBig .45s ease}
+.cap-flash{position:fixed;inset:0;z-index:690;pointer-events:none;background:radial-gradient(circle,rgba(255,236,170,.6),rgba(255,236,170,0) 70%);animation:capFlash .55s ease-out forwards}
+@keyframes capFlash{from{opacity:1}to{opacity:0}}
+.capture-pop{position:fixed;z-index:700;pointer-events:none;text-align:center;font-family:'Share Tech Mono','Inter',monospace;color:#c9a84c;text-shadow:0 0 18px rgba(255,215,106,.95),0 0 40px rgba(255,200,60,.6),0 2px 0 rgba(0,0,0,.25);animation:popCap 1.9s ease .15s both}
+.capture-pop b{display:block;font-size:clamp(2rem,9vw,3.6rem);letter-spacing:.18em;font-weight:400}
+.capture-pop span{font-size:clamp(.8rem,3vw,1.1rem);letter-spacing:.4em}
+@keyframes popCap{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}16%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}28%{transform:translate(-50%,-50%) scale(1)}78%{opacity:1}100%{opacity:0;transform:translate(-50%,-62%) scale(1.05)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.shake{animation:shake .35s ease}
+@media(max-width:500px){.boards{grid-template-columns:repeat(2,1fr)}.digit-input{width:56px;height:56px;font-size:1.7rem}}
 </style>
 </head>
 <body>
+<div id="introOverlay"></div>
+<div id="flashOverlay"></div>
+<div id="staticOverlay"></div>
+<div id="glitchOverlay"><canvas id="glitchCanvas"></canvas></div>
+<button id="skipBtn" onclick="skipIntro()">SKIP ▶</button>
 
-<!-- 遷移オーバーレイ -->
-<div id="overlay"></div>
-
-<!-- 次ページ -->
-<div id="nextPage">
-  <div class="next-bar"></div>
-  <h2>楽しんでいただけましたでしょうか</h2>
-  <p>— ここに正解後のコンテンツを追加してください —</p>
-  <div class="next-bar"></div>
+<div id="intro">
+  <canvas id="bgCanvas"></canvas>
+  <div id="successScreen">
+    <div class="success-ring">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="44" fill="none" stroke="#00ffa0" stroke-width="2" opacity=".3"/>
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#00ffa0" stroke-width="1.5" opacity=".6"/>
+        <circle cx="50" cy="50" r="32" fill="none" stroke="#00ffa0" stroke-width="1" opacity=".9"/>
+        <polyline class="success-check" points="28,50 44,66 72,36" fill="none" stroke="#00ffa0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="success-title">CONNECTION SUCCESS</div>
+    <div class="success-sub">SECURE CHANNEL ESTABLISHED</div>
+  </div>
+  <div id="connectingScreen">
+    <div class="hex-ring">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="50,4 93,27.5 93,72.5 50,96 7,72.5 7,27.5" fill="none" stroke="#00b4ff" stroke-width="1.2" opacity=".35"/>
+        <polygon points="50,14 83,32.5 83,67.5 50,86 17,67.5 17,32.5" fill="none" stroke="#00b4ff" stroke-width="1" opacity=".6"/>
+        <polygon points="50,24 73,37.5 73,62.5 50,76 27,62.5 27,37.5" fill="none" stroke="#00b4ff" stroke-width=".8" opacity=".9"/>
+        <circle cx="50" cy="50" r="5" fill="#00b4ff"/>
+        <circle cx="50" cy="50" r="10" fill="none" stroke="#00b4ff" stroke-width=".6" opacity=".5"/>
+      </svg>
+    </div>
+    <div class="connect-label">ESTABLISHING CONNECTION...</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+  <div id="messageScreen">
+    <div class="sender-tag">INCOMING TRANSMISSION</div>
+    <div class="msg-text" id="msgText"></div>
+    <div class="tap-hint" id="tapHint">TAP TO CONTINUE ▶</div>
+    <div class="progress-dots" id="progressDots"></div>
+  </div>
 </div>
 
-<!-- 4枚の画像 -->
-<div class="boards" id="boardsGrid"></div>
+<div id="mainContent">
+  <div id="overlay"></div>
 
-<!-- パスワード入力 -->
-<div class="password-wrap" id="passwordSection">
-  <div class="digits" id="digitsBox">
-    <input class="digit-input" id="d0" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="1桁目">
-    <input class="digit-input" id="d1" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="2桁目">
-    <input class="digit-input" id="d2" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="3桁目">
-    <input class="digit-input" id="d3" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="4桁目">
+  <!-- 第2問：法則類推 -->
+  <div id="goPage" class="page">
+    <div class="nazo-wrap">
+      <div class="nazo-title">法則を見つけ、？に入る言葉を答えよ</div>
+      <div class="nazo-board-row"><canvas class="nazo-board" id="nb0"></canvas><canvas class="nazo-board" id="nb1"></canvas><span class="nazo-eq">＝</span><span class="nazo-word">トス</span></div>
+      <div class="nazo-board-row"><canvas class="nazo-board" id="nb2"></canvas><span class="nazo-sep">-</span><canvas class="nazo-board" id="nb3"></canvas><span class="nazo-eq">＝</span><span class="nazo-word">ゲート</span></div>
+      <div class="nazo-board-row"><canvas class="nazo-board" id="nb4"></canvas><canvas class="nazo-board" id="nb5"></canvas><canvas class="nazo-board" id="nb6"></canvas><span class="nazo-eq">＝</span><span class="nazo-word nazo-q">？？？</span></div>
+      <div class="nazo-input-wrap">
+        <input class="nazo-input" id="nazoInput" type="text" placeholder="答えを入力" autocomplete="off">
+        <button class="submit-btn" id="nazoSubmit">確認する</button>
+      </div>
+      <div class="feedback-msg" id="nazoMsg"></div>
+    </div>
   </div>
-  <div class="msg" id="msg"></div>
-  <button class="submit-btn" id="submitBtn">確認する</button>
+
+  <!-- 第3問 -->
+  <div id="goPage2" class="page">
+    <div class="go-question">白番：この石を生かせ</div>
+    <canvas id="goCanvas2" class="go-canvas"></canvas>
+    <div class="feedback-msg" id="goMsg2"></div>
+    <button class="submit-btn" id="goResetBtn2" style="display:none">もう一度</button>
+  </div>
+
+  <!-- 第4問 -->
+  <div id="goPage2b" class="page">
+    <div class="go-question">黒番：白石を取れ</div>
+    <canvas id="goCanvas2b" class="go-canvas"></canvas>
+    <div class="feedback-msg" id="goMsg2b"></div>
+    <button class="submit-btn" id="goResetBtn2b" style="display:none">もう一度</button>
+  </div>
+
+  <!-- 第5問 -->
+  <div id="goPage3" class="page">
+    <div class="go-question">黒番：究極の一手を打て</div>
+    <div class="go-wrap"><canvas id="goCanvas3" class="go-canvas"></canvas></div>
+    <div class="feedback-msg" id="goMsg3"></div>
+    <button class="submit-btn" id="goResetBtn3" style="display:none">もう一度</button>
+  </div>
+
+  <!-- 第6問：法則類推（第2問と同じ形式） -->
+  <div id="goPage6" class="page">
+    <div class="nazo-wrap">
+      <div class="nazo-title">法則を見つけ、？に入る言葉を答えよ</div>
+      <div class="nazo-board-row"><canvas class="nazo-board" id="nc0"></canvas><canvas class="nazo-board" id="nc1"></canvas><canvas class="nazo-board" id="nc2"></canvas><span class="nazo-eq">＝</span><span class="nazo-word">テスト</span></div>
+      <div class="nazo-board-row"><canvas class="nazo-board" id="nc3"></canvas><canvas class="nazo-board" id="nc4"></canvas><canvas class="nazo-board" id="nc5"></canvas><span class="nazo-eq">＝</span><span class="nazo-word">コンビ</span></div>
+      <div class="nazo-board-row"><canvas class="nazo-board" id="nc6"></canvas><canvas class="nazo-board" id="nc7"></canvas><canvas class="nazo-board" id="nc8"></canvas><canvas class="nazo-board" id="nc9"></canvas></div>
+      <div class="nazo-board-row"><span class="nazo-eq">＝</span><span class="nazo-word nazo-q">？？？？</span></div>
+      <div class="nazo-input-wrap">
+        <input class="nazo-input" id="nazo6Input" type="text" placeholder="答えを入力" autocomplete="off">
+        <button class="submit-btn" id="nazo6Submit">確認する</button>
+      </div>
+      <div class="feedback-msg" id="nazo6Msg"></div>
+    </div>
+  </div>
+
+  <!-- 大謎 -->
+  <div id="nextPage" class="page">
+    <div class="nazo-wrap">
+      <canvas id="finalBoard" class="nazo-board"></canvas>
+      <div class="final-riddle">九つの星のうち、<br>天と地の間、端と端の間にあるもの。<br>始まりの問いを今解きなおせ。</div>
+      <div class="nazo-title" style="font-size:clamp(1rem,3vw,1.3rem);color:#1a1a1a;letter-spacing:.1em">鍵を言葉にし、ここに記せ</div>
+      <div class="nazo-input-wrap">
+        <input class="nazo-input" id="finalInput" type="text" placeholder="答えを入力" autocomplete="off">
+        <button class="submit-btn" id="finalSubmit">送信する</button>
+      </div>
+      <div class="feedback-msg" id="finalMsg"></div>
+    </div>
+  </div>
+
+  <!-- クリア -->
+  <div id="clearPage">
+    <canvas id="clearCanvas"></canvas>
+    <div id="clearContent">
+      <div class="clear-bar"></div>
+      <div class="clear-title">THANK YOU</div>
+      <div class="clear-sub">囲碁の力で、タイムマシンが動き出した。</div>
+      <canvas id="clearBoard"></canvas>
+      <div class="clear-bar"></div>
+    </div>
+  </div>
+
+  <!-- 締めメッセージ -->
+  <div id="endingPage">
+    <div id="endingScreen">
+      <div class="sender-tag">INCOMING TRANSMISSION</div>
+      <div class="msg-text" id="endingText"></div>
+      <div class="tap-hint" id="endingHint">TAP TO CONTINUE ▶</div>
+    </div>
+  </div>
+
+  <div class="go-question" id="q1Title">４桁の数字を答えよ。<br>その数字とは囲碁において勝敗を分けるもの。</div>
+  <button class="submit-btn" id="backBtn" style="display:none">◀ 戻る</button>
+  <div id="reviewNav" style="display:none"></div>
+  <div class="boards" id="boardsGrid"></div>
+  <div class="password-wrap" id="passwordSection">
+    <div class="digits" id="digitsBox">
+      <input class="digit-input" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="1桁目">
+      <input class="digit-input" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="2桁目">
+      <input class="digit-input" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="3桁目">
+      <input class="digit-input" type="number" min="0" max="9" inputmode="numeric" autocomplete="off" aria-label="4桁目">
+    </div>
+    <div class="feedback-msg" id="feedbackMsg"></div>
+    <button class="submit-btn" id="submitBtn">確認する</button>
+  </div>
 </div>
 
 <script>
-// ── 設定 ──────────────────────────────
-const CORRECT_PASSWORD = '1234'; // ← 正しいパスワードに変更
+// ══════════ 設定 ══════════
+const CORRECT_PASSWORD = '8949';          // 第6問の法則で 8=て 9=ん 4=ゲ → 「てんげん」。変更するなら法則も合わせること
+const BOARD_IMAGES = [null, null, null, null]; // ← 画像パスを入れると差し替え
+const SENDER_NAME = 'アイ';
+const NAZO_ANSWER = 'ゲスト';
+const FINAL_ANSWER = 'てんげん';           // 「天元」「テンゲン」も正解
 
-const BOARD_IMAGES = [
-  null,  // 1枚目: 例 './board1.png'
-  null,  // 2枚目
-  null,  // 3枚目
-  null,  // 4枚目
+const MESSAGES = [
+  { text: `こんにちは。こちらは${SENDER_NAME}と言います。` },
+  { text: 'どうやら、うまく接続できたようですね。' },
+  { text: '単刀直入に言います。' },
+  { text: '我々はある科学者が遺したタイムマシンを発見しました。' },
+  { text: 'しかし起動コードがわからないのです。' },
+  { text: 'その科学者は意図的に暗号でコードを隠したまま亡くなりました。' },
+  { text: '遺されたのはたった一言だけ。' },
+  { text: '「囲碁は不滅なり。全てに通ずる物よ。」', special: true },
+  { text: '囲碁…我々の時代ではもう誰も知らない古のゲームです。', dim: true },
+  { text: 'しかしあなた方の時代にはまだ囲碁体験ができるイベントがあるはず。' },
+  { text: '記録によれば、それは２０１教室で行われているようです。' },
+  { text: '囲碁を学び、この暗号を解いてコードを我々に教えてください！' },
+  { text: 'このサイトをあなた方の機器に表示します。' },
+  { text: 'どうか…お願いします…', dim: true },
 ];
-// ─────────────────────────────────────
+const ENDING_MESSAGES = [
+  { text: '…なるほど。天元でしたか…' },
+  { text: '盤の中心…全ての交点が通ずる場所。' },
+  { text: 'あの科学者は囲碁を愛していたそうです。' },
+  { text: 'だからこそ、囲碁を知る者にしか開けられない暗号を遺したのでしょう。' },
+  { text: '入力します…', dim: true },
+  { text: '…', dim: true },
+  { text: '…起動しました！', special: true },
+  { text: 'タイムマシンが動き始めました！', special: true },
+  { text: 'あなた方のおかげです。本当にありがとうございました。' },
+  { text: 'この通信もそろそろ途絶えるでしょう…', dim: true },
+  { text: '…', dim: true },
+  { text: 'いつかまた会えたら。' },
+  { text: 'あなたと一局打ってみたいものです。', dim: true },
+  { text: 'ありがとう。', special: true },
+];
 
-function makeSVG(stones) {
-  const s = 6, c = 100 / (s + 1);
-  let g = '';
-  for (let i = 1; i <= s; i++) {
-    g += `<line x1="${c}%" y1="${i*c}%" x2="${s*c}%" y2="${i*c}%" stroke="#7a5c28" stroke-width="0.8"/>`;
-    g += `<line x1="${i*c}%" y1="${c}%" x2="${i*c}%" y2="${s*c}%" stroke="#7a5c28" stroke-width="0.8"/>`;
+// 謎の碁盤（第5問・大謎・クリアページで共通）。展示の碁盤と合わせるならここを変更
+const MYSTERY_STONES = [
+  [2,2,'b'],[2,4,'b'],[2,6,'b'],
+  [4,2,'b'],          [4,6,'w'],
+  [6,2,'w'],[6,4,'w'],[6,6,'w'],
+];
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const $ = id => document.getElementById(id);
+const katakanaToHira = s => s.replace(/[ァ-ン]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+
+// ══════════ 背景Canvas ══════════
+(function () {
+  const canvas = $('bgCanvas'), ctx = canvas.getContext('2d');
+  let W, H, particles = [], lines = [];
+  function init() {
+    W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight;
+    particles = []; lines = [];
+    const cols = Math.ceil(W / 90), rows = Math.ceil(H / 90);
+    for (let r = 0; r <= rows; r++) for (let c = 0; c <= cols; c++)
+      particles.push({ x: c*(W/cols)+(Math.random()-.5)*20, y: r*(H/rows)+(Math.random()-.5)*20,
+        alpha: Math.random()*.5+.1, speed: Math.random()*.008+.004, phase: Math.random()*Math.PI*2 });
+    for (let i = 0; i < 6; i++) lines.push({ vertical: Math.random() > .5, pos: Math.random(),
+      speed: (Math.random()*.0008+.0003)*(Math.random()>.5?1:-1), alpha: Math.random()*.25+.1, width: Math.random()*1.5+.5 });
   }
-  const st = stones.map(([r,col,cl]) => {
-    const f = cl==='b'?'#111':'#f8f4ec', sk = cl==='b'?'#000':'#ccc';
-    return `<circle cx="${col*c}%" cy="${r*c}%" r="${c*0.42}%" fill="${f}" stroke="${sk}" stroke-width="1"/>`;
-  }).join('');
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(0,120,200,.12)'; ctx.lineWidth = .6;
+    const cols = Math.ceil(W/90), rows = Math.ceil(H/90);
+    for (let c = 0; c <= cols; c++) { ctx.beginPath(); ctx.moveTo(c*(W/cols),0); ctx.lineTo(c*(W/cols),H); ctx.stroke(); }
+    for (let r = 0; r <= rows; r++) { ctx.beginPath(); ctx.moveTo(0,r*(H/rows)); ctx.lineTo(W,r*(H/rows)); ctx.stroke(); }
+    lines.forEach(l => {
+      l.pos += l.speed;
+      if (l.pos > 1.1) l.pos = -.1; if (l.pos < -.1) l.pos = 1.1;
+      const grad = l.vertical ? ctx.createLinearGradient(0,0,0,H) : ctx.createLinearGradient(0,0,W,0);
+      const cl = v => Math.max(0, Math.min(1, v)), p = l.pos;
+      const stops = [[cl(p-.12),`rgba(0,180,255,0)`],[cl(p-.04),`rgba(0,180,255,${l.alpha})`],[cl(p),`rgba(180,240,255,${l.alpha*1.5})`],[cl(p+.04),`rgba(0,180,255,${l.alpha})`],[cl(p+.12),`rgba(0,180,255,0)`]];
+      let last = -1;
+      stops.forEach(([o, col]) => { if (o >= last) { grad.addColorStop(o, col); last = o; } });
+      ctx.strokeStyle = grad; ctx.lineWidth = l.width; ctx.beginPath();
+      if (l.vertical) { ctx.moveTo(p*W,0); ctx.lineTo(p*W,H); } else { ctx.moveTo(0,p*H); ctx.lineTo(W,p*H); }
+      ctx.stroke();
+    });
+    particles.forEach(p => {
+      const a = Math.sin(t*p.speed*60+p.phase)*.5+.5;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 1.8, 0, Math.PI*2); ctx.fillStyle = `rgba(0,180,255,${p.alpha*a})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  addEventListener('resize', init); init(); requestAnimationFrame(draw);
+})();
+
+// ══════════ タイプライター（イントロ／エンディング共通） ══════════
+function makeTypewriter(list, textId, hintId, { onAllDone, dotsId, hintOnLast = true, lastDelay = 2500 } = {}) {
+  const st = { idx: 0, typing: false, timer: null };
+  const el = $(textId), hint = $(hintId);
+  const last = () => st.idx === list.length - 1;
+  function afterTyped() {
+    st.typing = false;
+    const cur = el.querySelector('.cursor'); if (cur) cur.remove();
+    const i = st.idx;
+    setTimeout(() => {
+      if (st.idx !== i) return;
+      if (!last() || hintOnLast) hint.classList.add('visible');
+      if (last() && onAllDone) setTimeout(onAllDone, lastDelay);
+    }, 300);
+  }
+  function show(i) {
+    clearTimeout(st.timer);
+    st.idx = i;
+    if (dotsId) [...$(dotsId).children].forEach((d, k) => d.className = 'dot' + (k < i ? ' done' : k === i ? ' active' : ''));
+    const m = list[i];
+    el.className = 'msg-text' + (m.special ? ' special' : '') + (m.dim ? ' dim' : '');
+    el.textContent = '';
+    hint.classList.remove('visible');
+    st.typing = true;
+    const cursor = document.createElement('span'); cursor.className = 'cursor'; el.appendChild(cursor);
+    let n = 0;
+    (function type() {
+      if (n < m.text.length) { el.textContent = m.text.slice(0, ++n); el.appendChild(cursor); st.timer = setTimeout(type, m.special ? 60 : 40); }
+      else afterTyped();
+    })();
+  }
+  function tap() {
+    if (st.typing) {
+      clearTimeout(st.timer);
+      el.textContent = list[st.idx].text;
+      afterTyped();
+    } else if (!last()) show(st.idx + 1);
+  }
+  return { show, tap };
+}
+
+// ══════════ イントロ ══════════
+let introSkipped = false, mainStarted = false, introTW = null;
+
+function skipIntro() { showMain(); }
+
+async function runConnecting() {
+  const bar = $('progressBar');
+  for (let i = 0; i <= 100; i++) { if (introSkipped) return; bar.style.width = i + '%'; await sleep(20); }
+  if (introSkipped) return;
+  await showConnectionSuccess();
+  if (introSkipped) return;
+  startMessages();
+}
+
+async function showConnectionSuccess() {
+  const flash = $('flashOverlay');
+  flash.classList.add('flash'); await sleep(120); flash.classList.remove('flash');
+  $('connectingScreen').style.display = 'none';
+  const suc = $('successScreen'); suc.style.display = 'flex';
+  await sleep(2200);
+  if (introSkipped) return;
+  const so = $('staticOverlay');
+  so.style.transition = 'opacity .25s ease'; so.style.opacity = '1'; so.style.pointerEvents = 'all';
+  await sleep(280);
+  if (introSkipped) { so.style.opacity = '0'; so.style.pointerEvents = 'none'; return; }
+  suc.style.display = 'none'; $('messageScreen').style.display = 'flex';
+  await sleep(80);
+  so.style.transition = 'opacity .6s ease'; so.style.opacity = '0';
+  await sleep(650);
+  so.style.pointerEvents = 'none';
+}
+
+function startMessages() {
+  const wrap = $('progressDots');
+  MESSAGES.forEach(() => { const d = document.createElement('div'); d.className = 'dot'; wrap.appendChild(d); });
+  introTW = makeTypewriter(MESSAGES, 'msgText', 'tapHint', { dotsId: 'progressDots', onAllDone: () => { if (!introSkipped) showMain(); } });
+  introTW.show(0);
+  $('intro').addEventListener('click', () => { if (!introSkipped) introTW.tap(); });
+}
+
+// ══════════ メインへ（グリッチ遷移）══════════
+function showMain() {
+  if (mainStarted) return;           // 二重実行ガード
+  mainStarted = true; introSkipped = true;
+  $('skipBtn').style.display = 'none';
+  runGlitchTransition();
+}
+
+function runGlitchTransition() {
+  const go = $('glitchOverlay'), gc = $('glitchCanvas'), ctx = gc.getContext('2d');
+  const W = gc.width = innerWidth, H = gc.height = innerHeight;
+  go.style.opacity = '1'; go.style.pointerEvents = 'all';
+  let frame = 0; const total = 38;
+  (function drawGlitch() {
+    ctx.clearRect(0, 0, W, H);
+    const p = frame / total, bg = Math.floor(p*p*245);
+    ctx.fillStyle = `rgb(${bg},${Math.floor(bg*.96)},${Math.floor(bg*.93)})`; ctx.fillRect(0, 0, W, H);
+    if (p < .7) {
+      for (let i = 0, n = Math.floor((1-p)*18)+3; i < n; i++) {
+        ctx.fillStyle = `rgba(0,${Math.floor(180+Math.random()*75)},255,${(1-p)*.7})`;
+        ctx.fillRect((Math.random()-.5)*80*(1-p), Math.random()*H, W, Math.random()*6+1);
+      }
+      for (let i = 0, n = Math.floor((1-p)*10); i < n; i++) {
+        ctx.fillStyle = `rgba(0,255,${Math.floor(Math.random()*100+155)},${(1-p)*.4})`;
+        ctx.fillRect(Math.random()*W, Math.random()*H, Math.random()*120+20, Math.random()*8+2);
+      }
+    }
+    if (++frame <= total) return requestAnimationFrame(drawGlitch);
+    go.style.transition = 'opacity .5s ease'; go.style.opacity = '0';
+    $('intro').style.display = 'none';
+    const main = $('mainContent');
+    main.style.opacity = '0'; main.classList.add('show'); main.style.transition = 'opacity .8s ease';
+    setTimeout(() => main.style.opacity = '1', 50);
+    setTimeout(() => go.style.pointerEvents = 'none', 600);
+    buildBoards(); initPassword();
+  })();
+}
+
+// ══════════ 第1問：4枚の盤面 → パスワード ══════════
+// 19路盤の左上隅を切り取ったような盤：上と左に盤の縁、右と下は線が途切れて続く
+function makeSVG(stones) {
+  const u = 100/7.2, o = u*.7;
+  let g = '';
+  for (let i = 0; i <= 6; i++) {
+    const v = o + i*u, w = i === 0 ? 1.4 : .8;
+    g += `<line x1="${o}" y1="${v}" x2="100" y2="${v}" stroke="#7a5c28" stroke-width="${w}"/>`;
+    g += `<line x1="${v}" y1="${o}" x2="${v}" y2="100" stroke="#7a5c28" stroke-width="${w}"/>`;
+  }
+  g += `<circle cx="${o+3*u}" cy="${o+3*u}" r="${u*.11}" fill="#7a5c28"/>`;
+  const st = stones.map(([r, col, cl]) => `<circle cx="${o+col*u}" cy="${o+r*u}" r="${u*.44}" fill="${cl==='b'?'#111':'#f8f4ec'}" stroke="${cl==='b'?'#000':'#ccc'}" stroke-width=".8"/>`).join('');
   return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#dcb468"/>${g}${st}</svg>`;
 }
-const SAMPLES = [
-  [[1,1,'b'],[1,3,'b'],[2,2,'w'],[3,1,'b'],[3,3,'w'],[4,2,'b']],
-  [[1,2,'w'],[2,1,'b'],[2,3,'b'],[3,2,'w'],[4,1,'w'],[4,3,'b']],
-  [[1,1,'b'],[1,2,'b'],[2,3,'w'],[3,1,'w'],[3,3,'b'],[4,2,'w']],
-  [[1,3,'b'],[2,1,'w'],[2,2,'b'],[3,3,'b'],[4,1,'b'],[4,2,'w']],
-];
+// 黒石で囲んだ空点（黒地）の数 = 数字。8, 9, 4, 9
+function ringS(h, w) {
+  const s = [];
+  for (let r = 1; r <= h+2; r++) for (let c = 1; c <= w+2; c++)
+    if (r === 1 || r === h+2 || c === 1 || c === w+2) s.push([r, c, 'b']);
+  s.push([6,1,'w'], [6,6,'w']);
+  return s;
+}
+const SAMPLES = [ringS(2,4), ringS(3,3), ringS(2,2), ringS(3,3)];
+function buildBoards() {
+  const grid = $('boardsGrid');
+  BOARD_IMAGES.forEach((src, i) => {
+    if (src) { const img = document.createElement('img'); img.className = 'board-img'; img.src = src; img.alt = `盤面${i+1}`; grid.appendChild(img); }
+    else { const ph = document.createElement('div'); ph.className = 'board-placeholder'; ph.innerHTML = makeSVG(SAMPLES[i]); grid.appendChild(ph); }
+  });
+}
 
-const grid = document.getElementById('boardsGrid');
-BOARD_IMAGES.forEach((src, i) => {
-  if (src) {
-    const img = document.createElement('img');
-    img.className = 'board-img';
-    img.src = src; img.alt = `盤面${i+1}`;
-    grid.appendChild(img);
-  } else {
-    const ph = document.createElement('div');
-    ph.className = 'board-placeholder';
-    ph.innerHTML = makeSVG(SAMPLES[i]);
-    grid.appendChild(ph);
+// ページ切替（フェード付き）
+function transition(fromId, toFn, bg) {
+  const solvedMap = { goPage: 2, goPage2b: 3, goPage3: 4, goPage2: 5, goPage6: 6 };
+  if (solvedMap[fromId]) markSolved(solvedMap[fromId]);
+  const ov = $('overlay');
+  if (bg) ov.style.background = bg;
+  ov.classList.add('active');
+  setTimeout(() => {
+    const f = $(fromId); f.classList.remove('show'); f.style.display = 'none';
+    ov.classList.remove('active'); ov.style.background = '';
+    toFn();
+  }, 900);
+}
+
+function initPassword() {
+  const inputs = [...document.querySelectorAll('.digit-input')];
+  const msgEl = $('feedbackMsg'), box = $('digitsBox');
+  const show = (t, cls) => { msgEl.textContent = t; msgEl.className = `feedback-msg ${cls}`; };
+  inputs.forEach((inp, i) => {
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/[^0-9]/g, '').slice(-1);
+      if (inp.value && i < 3) inputs[i+1].focus();
+      msgEl.className = 'feedback-msg';
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !inp.value && i > 0) inputs[i-1].focus();
+      if (e.key === 'Enter') check();
+    });
+    inp.addEventListener('paste', e => {
+      e.preventDefault();
+      const t = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+      t.split('').slice(0, 4).forEach((ch, j) => { if (inputs[i+j]) inputs[i+j].value = ch; });
+      inputs[Math.min(i + t.length, 3)].focus();
+    });
+  });
+  function check() {
+    const pw = inputs.map(d => d.value).join('');
+    if (pw.length < 4) return show('4桁を入力してください', 'error');
+    if (pw === CORRECT_PASSWORD) {
+      show('正解', 'success');
+      setTimeout(() => $('overlay').classList.add('active'), 500);
+      setTimeout(() => {
+        $('passwordSection').style.display = 'none'; $('boardsGrid').style.display = 'none'; $('q1Title').style.display = 'none';
+        $('overlay').classList.remove('active'); markSolved(1); showGoPage();
+      }, 1300);
+    } else {
+      box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+      show('不正解', 'error'); inputs.forEach(d => d.value = ''); inputs[0].focus();
+    }
   }
-});
+  $('submitBtn').addEventListener('click', check);
+  inputs[0].focus();
+}
 
-const inputs = Array.from(document.querySelectorAll('.digit-input'));
-const msgEl = document.getElementById('msg');
-const box = document.getElementById('digitsBox');
-const overlay = document.getElementById('overlay');
-const nextPage = document.getElementById('nextPage');
+// ══════════ 共通：碁盤 ══════════
+function drawStone(ctx, x, y, r, col, theme) {
+  const dark = theme === 'dark';
+  const g = ctx.createRadialGradient(x-r*.3, y-r*.3, r*.04, x, y, r);
+  if (col === 'b') { g.addColorStop(0, dark ? '#334' : '#555'); g.addColorStop(1, dark ? '#001' : '#080808'); }
+  else { g.addColorStop(0, '#fff'); g.addColorStop(1, dark ? '#aac' : '#ccc'); }
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = dark ? 'rgba(0,180,255,.5)' : (col === 'b' ? '#000' : '#aaa'); ctx.lineWidth = .7; ctx.stroke();
+}
 
-inputs.forEach((inp, i) => {
-  inp.addEventListener('input', () => {
-    inp.value = inp.value.replace(/[^0-9]/g,'').slice(-1);
-    if (inp.value && i < 3) inputs[i+1].focus();
-    msgEl.className = 'msg';
-  });
-  inp.addEventListener('keydown', e => {
-    if (e.key === 'Backspace' && !inp.value && i > 0) inputs[i-1].focus();
-    if (e.key === 'Enter') check();
-  });
-  inp.addEventListener('paste', e => {
-    e.preventDefault();
-    const t = (e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'');
-    t.split('').slice(0,4).forEach((ch,j) => { if(inputs[i+j]) inputs[i+j].value=ch; });
-    inputs[Math.min(i+t.length,3)].focus();
-  });
-});
+function makeBoard(canvasEl, SIZE, preset, stars, CELL, stoneColor = 'w') {
+  const PAD = CELL, PX = PAD*2 + CELL*(SIZE-1);
+  canvasEl.width = canvasEl.height = PX;
+  const ctx = canvasEl.getContext('2d'), board = {};
+  const reset = () => { Object.keys(board).forEach(k => delete board[k]); preset.forEach(([r,c,col]) => board[`${r},${c}`] = col); };
+  reset();
+  function drawAll(hover, anim) {
+    ctx.fillStyle = '#dcb468'; ctx.fillRect(0, 0, PX, PX);
+    ctx.strokeStyle = '#7a5c28'; ctx.lineWidth = .8;
+    for (let i = 0; i < SIZE; i++) {
+      const v = PAD + i*CELL;
+      ctx.beginPath(); ctx.moveTo(v, PAD); ctx.lineTo(v, PAD+(SIZE-1)*CELL); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(PAD, v); ctx.lineTo(PAD+(SIZE-1)*CELL, v); ctx.stroke();
+    }
+    (stars || []).forEach(([r, c]) => { ctx.beginPath(); ctx.arc(PAD+c*CELL, PAD+r*CELL, CELL*.1, 0, Math.PI*2); ctx.fillStyle = '#7a5c28'; ctx.fill(); });
+    Object.entries(board).forEach(([k, col]) => {
+      const [r, c] = k.split(',').map(Number), x = PAD+c*CELL, y = PAD+r*CELL;
+      const st = anim && anim.state[k];
+      if (st) {
+        if (st.hide) return;
+        ctx.save(); ctx.shadowColor = 'rgba(255,215,106,.95)'; ctx.shadowBlur = CELL*.9*st.glow;
+        drawStone(ctx, x, y, CELL*.46*st.scale, col); ctx.restore();
+      } else drawStone(ctx, x, y, CELL*.46, col);
+    });
+    if (hover && !board[`${hover[0]},${hover[1]}`]) {
+      ctx.globalAlpha = .4; drawStone(ctx, PAD+hover[1]*CELL, PAD+hover[0]*CELL, CELL*.46, stoneColor); ctx.globalAlpha = 1;
+    }
+  }
+  function cellFrom(e) {
+    const rect = canvasEl.getBoundingClientRect(), k = PX / rect.width;
+    const src = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+    const c = Math.round(((src.clientX-rect.left)*k - PAD)/CELL), r = Math.round(((src.clientY-rect.top)*k - PAD)/CELL);
+    return (c < 0 || c >= SIZE || r < 0 || r >= SIZE) ? null : [r, c];
+  }
+  return { board, drawAll, cellFrom, reset };
+}
 
-function check() {
-  const pw = inputs.map(d=>d.value).join('');
-  if (pw.length < 4) { showMsg('4桁を入力してください','error'); return; }
-  if (pw === CORRECT_PASSWORD) {
-    showMsg('正解です','success');
-    // フェードアウト → 次ページへ
-    setTimeout(() => {
-      overlay.classList.add('active');
-    }, 500);
-    setTimeout(() => {
-      document.getElementById('passwordSection').style.display = 'none';
-      grid.style.display = 'none';
-      nextPage.classList.add('show');
-      overlay.classList.remove('active');
-      setTimeout(() => nextPage.classList.add('animate'), 50);
-    }, 1300);
-  } else {
-    box.classList.remove('shake');
-    void box.offsetWidth;
-    box.classList.add('shake');
-    showMsg('違います','error');
-    inputs.forEach(d=>d.value='');
-    inputs[0].focus();
+// 効果音（不要なら SOUND_ON を false に）
+const SOUND_ON = true;
+let _ac = null;
+function tone(freq, dur, type = 'sine', vol = .12, when = 0, slideTo) {
+  if (!SOUND_ON) return;
+  try {
+    _ac = _ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (_ac.state === 'suspended') _ac.resume();
+    const t = _ac.currentTime + when, o = _ac.createOscillator(), g = _ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(_ac.destination); o.start(t); o.stop(t + dur + .02);
+  } catch (e) {}
+}
+// 石を取る瞬間：画面の揺れ・フラッシュ・「CAPTURE!」・低い衝撃音
+function startCaptureFx(canvas, n) {
+  canvas.classList.remove('shake-big'); void canvas.offsetWidth; canvas.classList.add('shake-big');
+  setTimeout(() => canvas.classList.remove('shake-big'), 500);
+  const fl = document.createElement('div'); fl.className = 'cap-flash'; document.body.appendChild(fl);
+  setTimeout(() => fl.remove(), 600);
+  const rect = canvas.getBoundingClientRect();
+  const pop = document.createElement('div'); pop.className = 'capture-pop';
+  pop.style.left = (rect.left + rect.width/2) + 'px'; pop.style.top = (rect.top + rect.height/2) + 'px';
+  pop.innerHTML = `<b>CAPTURE!</b><span>${n} STONES</span>`;
+  document.body.appendChild(pop);
+  setTimeout(() => pop.remove(), 2200);
+  tone(140, .3, 'sine', .25, 0, 45);
+}
+
+// 1手問題の共通ロジック
+function setupOneMove({ canvasId, msgId, resetId, size, preset, stars, answer, color, cell, okText, captures, locks, onDone }) {
+  const canvas = $(canvasId), msg = $(msgId), resetBtn = $(resetId);
+  const { board, drawAll, cellFrom, reset } = makeBoard(canvas, size, preset, stars, cell, color);
+  let answered = false, locked = false;
+  drawAll();
+  const active = () => !answered && !locked;
+  canvas.addEventListener('mousemove', e => { if (active()) drawAll(cellFrom(e)); });
+  canvas.addEventListener('mouseleave', () => { if (active()) drawAll(); });
+  canvas.addEventListener('click', e => place(cellFrom(e)));
+  canvas.addEventListener('touchend', e => { e.preventDefault(); place(cellFrom(e)); });
+  function animateCapture(keys, done, origin) {
+    const items = keys.map(k => {
+      const [r, c] = k.split(',').map(Number);
+      return { k, r, c, col: board[k], delay: (origin ? Math.hypot(r-origin[0], c-origin[1]) : 0) * 85, spawned: false };
+    });
+    const DUR = 420, maxDelay = Math.max(0, ...items.map(i => i.delay));
+    const parts = [], rings = [], ctx = canvas.getContext('2d');
+    const t0 = performance.now(); let last = t0;
+    startCaptureFx(canvas, items.length);
+    function burst(it, idx) {
+      const x = cell + it.c*cell, y = cell + it.r*cell;
+      rings.push({ x, y, age: 0, life: 450 });
+      for (let i = 0; i < 14; i++) {
+        const ang = Math.random()*Math.PI*2, sp = cell*(.003 + Math.random()*.009);
+        parts.push({ x, y, vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp - cell*.002, age: 0, life: 500 + Math.random()*500,
+          size: cell*(.05 + Math.random()*.08), color: ['#ffd76a','#fff6d0','#ffffff', it.col === 'b' ? '#333' : '#f4efe0'][i % 4] });
+      }
+      tone(420 + idx*55, .14, 'triangle', .1, 0, 900 + idx*55);
+    }
+    (function f(now) {
+      const t = now - t0, dt = Math.min(40, now - last); last = now;
+      const state = {};
+      items.forEach((it, idx) => {
+        const q = (t - it.delay) / DUR;
+        if (q < 0) state[it.k] = { scale: 1, glow: 0 };
+        else if (q < .3) { const e = q/.3; state[it.k] = { scale: 1 + .4*e, glow: e }; }
+        else { state[it.k] = { hide: true }; if (!it.spawned) { it.spawned = true; burst(it, idx); } }
+      });
+      drawAll(null, { state });
+      rings.forEach(r => {
+        r.age += dt; const p = Math.min(1, r.age / r.life);
+        ctx.beginPath(); ctx.arc(r.x, r.y, cell*(.5 + 1.3*p), 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(255,215,106,${1-p})`; ctx.lineWidth = 2.2; ctx.stroke();
+      });
+      parts.forEach(q => {
+        q.age += dt; q.vy += cell*.00001*dt; q.x += q.vx*dt; q.y += q.vy*dt;
+        const a = Math.max(0, 1 - q.age/q.life);
+        ctx.globalAlpha = a; ctx.fillStyle = q.color;
+        ctx.beginPath(); ctx.arc(q.x, q.y, q.size*(.4 + .6*a), 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
+      });
+      const burstsDone = items.every(i => i.spawned);
+      const fxDone = parts.every(q => q.age >= q.life) && rings.every(r => r.age >= r.life);
+      if ((burstsDone && fxDone) || t > maxDelay + 3000) {
+        keys.forEach(k => delete board[k]); drawAll();
+        tone(880, .5, 'sine', .1, 0); tone(1318, .7, 'sine', .1, .15);
+        done();
+      } else requestAnimationFrame(f);
+    })(t0);
+  }
+  function place(c) {
+    if (!c || !active()) return;
+    const [r, col] = c;
+    if (board[`${r},${col}`]) return;
+    board[`${r},${col}`] = color; drawAll();
+    if (r === answer[0] && col === answer[1]) {
+      answered = true;
+      const finish = () => {
+        msg.textContent = okText; msg.className = 'feedback-msg success'; resetBtn.style.display = 'none';
+        setTimeout(onDone, 1200);
+      };
+      if (captures) {
+        const keys = (typeof captures === 'function' ? captures(board) : captures).map(([a, b]) => `${a},${b}`);
+        setTimeout(() => animateCapture(keys, finish, [r, col]), 250);
+      } else finish();
+    } else {
+      locked = locks;
+      msg.textContent = '不正解';
+      msg.className = 'feedback-msg error'; resetBtn.style.display = 'inline-block';
+      resetBtn.onclick = () => { reset(); answered = locked = false; msg.className = 'feedback-msg'; resetBtn.style.display = 'none'; drawAll(); };
+    }
   }
 }
 
-function showMsg(t, cls) { msgEl.textContent = t; msgEl.className = `msg ${cls}`; }
+// ══════════ 第2問：法則類推 ══════════
+// 黒石で囲んだ内部の空点（黒地）= 数字。2→ス、4→ゲ、6→ト、「-」→ー
+function ring(h, w) {
+  const s = [];
+  for (let r = 1; r <= h+2; r++) for (let c = 1; c <= w+2; c++)
+    if (r === 1 || r === h+2 || c === 1 || c === w+2) s.push([r, c, 'b']);
+  s.push([0,0,'w'], [6,0,'w'], [6,6,'w']);
+  return { size: 7, stones: s };
+}
+const B2 = ring(1,2), B4 = ring(2,2), B6 = ring(2,3), B8 = ring(2,4), B9 = ring(3,3), B1 = ring(1,1), B3 = ring(1,3);
+// トス = 6,2 ／ ゲート = 4 - 6 ／ ゲスト = 4,2,6
+const NAZO_BOARDS = [B6, B2, B4, B6, B4, B2, B6];
 
-document.getElementById('submitBtn').addEventListener('click', check);
-inputs[0].focus();
+function showGoPage() { $('goPage').classList.add('show'); initNazo(); }
+
+function drawNazoBoard(canvasId, def, div = 3.5) {
+  const canvas = $(canvasId), SIZE = def.size;
+  const maxPx = Math.min(innerWidth*.82/div, innerHeight*.25, 110);
+  const CELL = Math.max(10, Math.floor(maxPx / (SIZE + .2))), O = CELL*.7, PX = Math.round(O + CELL*(SIZE-1) + CELL*.5);
+  canvas.width = canvas.height = PX;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#dcb468'; ctx.fillRect(0, 0, PX, PX);
+  ctx.strokeStyle = '#7a5c28';
+  for (let i = 0; i < SIZE; i++) {
+    const v = O + i*CELL;
+    ctx.lineWidth = i === 0 ? 1.3 : .7;
+    ctx.beginPath(); ctx.moveTo(v, O); ctx.lineTo(v, PX); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(O, v); ctx.lineTo(PX, v); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(O+3*CELL, O+3*CELL, CELL*.1, 0, Math.PI*2); ctx.fillStyle = '#7a5c28'; ctx.fill();
+  def.stones.forEach(([r, c, col]) => drawStone(ctx, O+c*CELL, O+r*CELL, CELL*.44, col));
+}
+
+function initNazo() {
+  NAZO_BOARDS.forEach((d, i) => drawNazoBoard(`nb${i}`, d));
+  const input = $('nazoInput'), msg = $('nazoMsg'), btn = $('nazoSubmit');
+  function check() {
+    if (katakanaToHira(input.value.trim()) === katakanaToHira(NAZO_ANSWER)) {
+      msg.textContent = '正解'; msg.className = 'feedback-msg success';
+      input.disabled = btn.disabled = true;
+      setTimeout(() => transition('goPage', showGoPage2b), 1000);
+    } else {
+      msg.textContent = '不正解'; msg.className = 'feedback-msg error';
+      input.value = ''; input.focus();
+    }
+  }
+  btn.addEventListener('click', check);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  input.focus();
+}
+
+// ══════════ 第3問：9路盤（生きる）══════════
+const GO2_PRESET = [
+  [0,1,'w'],[0,2,'w'],[0,3,'w'],[0,4,'b'],
+  [1,2,'w'],[1,3,'b'],[1,4,'b'],
+  [2,2,'w'],[2,3,'b'],[2,5,'b'],
+  [3,0,'w'],[3,1,'w'],[3,2,'b'],
+  [4,0,'b'],[4,1,'b'],[4,2,'b'],
+  [6,4,'b'],
+];
+const GO2_ANSWER = [1,0];
+const STARS9 = [[2,2],[2,6],[4,4],[6,2],[6,6]];
+const cell9 = () => Math.max(32, Math.floor(Math.min(innerWidth*.82, innerHeight*.55, 400) / 9));
+
+function showGoPage2() {
+  $('goPage2').classList.add('show');
+  setupOneMove({ canvasId: 'goCanvas2', msgId: 'goMsg2', resetId: 'goResetBtn2', size: 9, preset: GO2_PRESET, stars: STARS9,
+    answer: GO2_ANSWER, color: 'w', cell: cell9(), okText: '正解', locks: true,
+    onDone: () => transition('goPage2', showGoPage6) });
+}
+
+// ══════════ 第4問：9路盤（取る）══════════
+const GO2B_PRESET = [
+  [0,0,'w'],[0,1,'w'],[0,2,'w'],[0,3,'b'],
+  [1,0,'w'],[1,1,'w'],[1,2,'b'],[1,3,'b'],
+  [2,0,'w'],[2,1,'b'],[2,2,'b'],
+  [3,1,'w'],[3,2,'b'],[3,4,'b'],
+  [4,0,'w'],[4,1,'w'],[4,2,'b'],
+  [5,0,'b'],[5,1,'b'],
+  [6,2,'b'],
+];
+const GO2B_ANSWER = [3,0];
+const GO2B_CAPTURES = [[0,0],[0,1],[0,2],[1,0],[1,1],[2,0],[3,1],[4,0],[4,1]];
+
+function showGoPage2b() {
+  $('goPage2b').classList.add('show');
+  setupOneMove({ canvasId: 'goCanvas2b', msgId: 'goMsg2b', resetId: 'goResetBtn2b', size: 9, preset: GO2B_PRESET, stars: STARS9,
+    answer: GO2B_ANSWER, color: 'b', cell: cell9(), okText: '正解', captures: GO2B_CAPTURES, locks: true,
+    onDone: () => transition('goPage2b', showGoPage3) });
+}
+
+// ══════════ 第5問：9路盤（究極の一手）══════════
+// 白の目は (0,4) の1点だけで、黒石 (0,3)(1,4) はアタリ。(0,4) に打てば白全体を取れる（他の手は白が (0,4) で取り返して生きる）
+const GO3_PRESET = [
+  [0,2,'w'],[1,2,'w'],[1,3,'w'],[2,3,'w'],[2,4,'w'],[2,5,'w'],[1,5,'w'],[0,5,'w'],
+  [0,1,'b'],[1,1,'b'],[2,1,'b'],[2,2,'b'],[3,3,'b'],[3,4,'b'],[3,5,'b'],[2,6,'b'],[1,6,'b'],[0,6,'b'],
+  [0,3,'b'],[1,4,'b'],
+];
+const GO3_ANSWER = [0,4];
+
+function showGoPage3() {
+  $('goPage3').classList.add('show');
+  setupOneMove({ canvasId: 'goCanvas3', msgId: 'goMsg3', resetId: 'goResetBtn3', size: 9, preset: GO3_PRESET, stars: STARS9,
+    answer: GO3_ANSWER, color: 'b', cell: cell9(),
+    captures: b => Object.entries(b).filter(([, col]) => col === 'w').map(([k]) => k.split(',').map(Number)),
+    okText: '正解', locks: false,
+    onDone: () => transition('goPage3', showGoPage2) });
+}
+
+// ══════════ 第6問：法則類推（第2問の暗号表を拡張）══════════
+// 第2問の表（4=ゲ 2=ス 6=ト）に 8=て 9=ん を足したもの。
+// テスト=8,2,6 ／ コンビ=1,9,3 ／ ？=4,9,8,9（ゲンテン）。第1問の 8949 に使うと「てんげん」
+const NAZO6_BOARDS = [B8,B2,B6, B1,B9,B3, B4,B9,B8,B9];
+const NAZO6_ANSWERS = ['げんてん', '原点'];
+
+function showGoPage6() { $('goPage6').classList.add('show'); initNazo6(); }
+
+function initNazo6() {
+  NAZO6_BOARDS.forEach((d, i) => drawNazoBoard(`nc${i}`, d, i >= 6 ? 4.4 : 3.5));
+  const input = $('nazo6Input'), msg = $('nazo6Msg'), btn = $('nazo6Submit');
+  function check() {
+    const v = katakanaToHira(input.value.trim());
+    if (NAZO6_ANSWERS.includes(v)) {
+      msg.textContent = '正解'; msg.className = 'feedback-msg success';
+      input.disabled = btn.disabled = true;
+      setTimeout(() => transition('goPage6', showFinalPage), 1000);
+    } else {
+      msg.textContent = '不正解'; msg.className = 'feedback-msg error';
+      input.value = ''; input.focus();
+    }
+  }
+  btn.addEventListener('click', check);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  input.focus();
+}
+
+// ══════════ 謎の碁盤（大謎・クリアページ共通）══════════
+const STARS9_ALL = [[2,2],[2,4],[2,6],[4,2],[4,4],[4,6],[6,2],[6,4],[6,6]];
+function drawMysteryBoard(canvas, dark, hRatio = .42) {
+  const S = 9, cell = Math.max(16, Math.floor(Math.min(innerWidth*.8, innerHeight*hRatio, 340) / (S+1)));
+  const pad = cell, px = pad*2 + cell*(S-1);
+  canvas.width = canvas.height = px;
+  const g = canvas.getContext('2d');
+  g.fillStyle = dark ? '#0a1a2a' : '#dcb468'; g.fillRect(0, 0, px, px);
+  g.strokeStyle = dark ? 'rgba(0,180,255,.25)' : '#7a5c28'; g.lineWidth = .8;
+  for (let i = 0; i < S; i++) {
+    const v = pad + i*cell;
+    g.beginPath(); g.moveTo(v, pad); g.lineTo(v, pad+(S-1)*cell); g.stroke();
+    g.beginPath(); g.moveTo(pad, v); g.lineTo(pad+(S-1)*cell, v); g.stroke();
+  }
+  STARS9_ALL.forEach(([r, c]) => { g.beginPath(); g.arc(pad+c*cell, pad+r*cell, cell*.1, 0, Math.PI*2); g.fillStyle = dark ? 'rgba(0,180,255,.4)' : '#7a5c28'; g.fill(); });
+  MYSTERY_STONES.forEach(([r, c, col]) => drawStone(g, pad+c*cell, pad+r*cell, cell*.44, col, dark ? 'dark' : 'light'));
+}
+
+// ══════════ 大謎 ══════════
+function showFinalPage() { $('nextPage').classList.add('show'); initFinalPage(); }
+
+function initFinalPage() {
+  drawMysteryBoard($('finalBoard'), false, .3);
+  const input = $('finalInput'), msg = $('finalMsg'), btn = $('finalSubmit');
+  const norm = s => katakanaToHira(s.trim()).replace(/天元/g, 'てんげん');
+  function check() {
+    if (!input.value.trim()) return;
+    if (norm(input.value) === norm(FINAL_ANSWER)) {
+      msg.textContent = '正解'; msg.className = 'feedback-msg success';
+      input.disabled = btn.disabled = true;
+      setTimeout(() => transition('nextPage', showEndingPage, '#020d1a'), 800);
+    } else {
+      msg.textContent = '不正解'; msg.className = 'feedback-msg error';
+      input.value = ''; input.focus();
+    }
+  }
+  btn.addEventListener('click', check);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  input.focus();
+}
+
+// ══════════ 解いた問題の見直し（どの問題からでも移動可）══════════
+let revisitEl = null, revisitIdx = -1, solvedCount = 0, navOff = false;
+const PAGE_GETTERS = [() => getQ1Review(), () => $('goPage'), () => $('goPage2b'), () => $('goPage3'), () => $('goPage2'), () => $('goPage6')];
+
+function markSolved(n) { solvedCount = Math.max(solvedCount, n); renderNav(); }
+
+let navOpen = false;
+function renderNav() {
+  const nav = $('reviewNav');
+  nav.innerHTML = '';
+  nav.style.display = (solvedCount > 0 && !navOff) ? 'flex' : 'none';
+  const toggle = document.createElement('button');
+  toggle.className = 'submit-btn nav-btn';
+  toggle.textContent = `見直し ${navOpen ? '▲' : '▼'}`;
+  toggle.addEventListener('click', () => { navOpen = !navOpen; renderNav(); });
+  nav.appendChild(toggle);
+  if (!navOpen) return;
+  const list = document.createElement('div'); list.className = 'nav-list';
+  for (let i = 0; i < solvedCount; i++) {
+    const b = document.createElement('button');
+    b.className = 'submit-btn nav-btn' + (i === revisitIdx ? ' active' : '');
+    b.textContent = `第${i+1}問`;
+    b.addEventListener('click', () => { navOpen = false; revisitIdx === i ? closeRevisit() : openRevisit(i); renderNav(); });
+    list.appendChild(b);
+  }
+  nav.appendChild(list);
+}
+
+function openRevisit(i) {
+  closeRevisit();
+  const el = PAGE_GETTERS[i]();
+  el.style.display = ''; el.classList.add('show', 'revisit');
+  revisitEl = el; revisitIdx = i;
+  $('backBtn').style.display = 'block';
+  renderNav();
+}
+
+function closeRevisit() {
+  if (!revisitEl) return;
+  revisitEl.classList.remove('show', 'revisit'); revisitEl.style.display = 'none';
+  revisitEl = null; revisitIdx = -1;
+  $('backBtn').style.display = 'none';
+  renderNav();
+}
+$('backBtn').addEventListener('click', closeRevisit);
+
+function getQ1Review() {
+  let d = $('q1Review');
+  if (d) return d;
+  d = document.createElement('div'); d.id = 'q1Review'; d.className = 'page'; d.style.display = 'none';
+  const t = document.createElement('div'); t.className = 'go-question'; t.innerHTML = '４桁の数字を答えよ。<br>その数字とは囲碁において勝敗を分けるもの。';
+  const grid = $('boardsGrid').cloneNode(true); grid.removeAttribute('id'); grid.style.display = '';
+  const digits = document.createElement('div'); digits.className = 'digits';
+  CORRECT_PASSWORD.split('').forEach(ch => { const x = document.createElement('div'); x.className = 'digit-view'; x.textContent = ch; digits.appendChild(x); });
+  const m = document.createElement('div'); m.className = 'feedback-msg success'; m.textContent = '正解';
+  d.append(t, grid, digits, m);
+  $('mainContent').appendChild(d);
+  return d;
+}
+// ══════════ 締めメッセージ ══════════
+function showEndingPage() {
+  closeRevisit(); navOff = true; renderNav();
+  const page = $('endingPage');
+  page.classList.add('show');
+  // 最後のメッセージを打ち終えたらクリアページへ
+  const tw = makeTypewriter(ENDING_MESSAGES, 'endingText', 'endingHint', { onAllDone: showClearPage, hintOnLast: false, lastDelay: 1500 });
+  tw.show(0);
+  page.addEventListener('click', tw.tap);
+}
+
+// ══════════ クリアページ ══════════
+function showClearPage() {
+  const ov = $('introOverlay');
+  ov.style.opacity = '1'; ov.style.pointerEvents = 'all';
+  setTimeout(() => {
+    $('endingPage').style.display = 'none';
+    ov.style.opacity = '0'; ov.style.pointerEvents = 'none';
+    $('clearPage').classList.add('show');
+    drawClearBoard(); initClearCanvas();
+  }, 900);
+}
+
+function drawClearBoard() { drawMysteryBoard($('clearBoard'), true); }
+
+function initClearCanvas() {
+  const canvas = $('clearCanvas'), ctx = canvas.getContext('2d');
+  const W = canvas.width = innerWidth, H = canvas.height = innerHeight;
+  const ps = Array.from({ length: 80 }, () => ({ x: Math.random()*W, y: Math.random()*H, vx: (Math.random()-.5)*.6, vy: (Math.random()-.5)*.6,
+    r: Math.random()*2+.5, alpha: Math.random()*.6+.2, phase: Math.random()*Math.PI*2 }));
+  (function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+    ps.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0; if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(0,180,255,${p.alpha*(Math.sin(t*.02+p.phase)*.5+.5)})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  })(0);
+}
+
+runConnecting();
 </script>
 </body>
 </html>
