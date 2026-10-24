@@ -238,8 +238,7 @@
   <!-- 大謎 -->
   <div id="nextPage" class="page">
     <div class="nazo-wrap">
-      <canvas id="finalBoard" class="nazo-board"></canvas>
-      <div class="final-riddle">九つの星のうち、<br>天と地の間、端と端の間にあるもの。<br>始まりの問いを今解きなおせ。</div>
+      <div class="final-riddle"><br>天と地の間、端と端の間にあるもの<br>始まりの問いを今解きなおせ。</div>
       <div class="nazo-title" style="font-size:clamp(1rem,3vw,1.3rem);color:#1a1a1a;letter-spacing:.1em">鍵を言葉にし、ここに記せ</div>
       <div class="nazo-input-wrap">
         <input class="nazo-input" id="finalInput" type="text" placeholder="答えを入力" autocomplete="off">
@@ -972,7 +971,6 @@ function drawMysteryBoard(canvas, dark, hRatio = .42) {
 function showFinalPage() { $('nextPage').classList.add('show'); initFinalPage(); }
 
 function initFinalPage() {
-  drawMysteryBoard($('finalBoard'), false, .3);
   const input = $('finalInput'), msg = $('finalMsg'), btn = $('finalSubmit');
   const norm = s => katakanaToHira(s.trim()).replace(/天元/g, 'てんげん');
   function check() {
